@@ -1,10 +1,17 @@
 package pipeline
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/CircleCI-Public/circleci-cli/git"
+	"github.com/CircleCI-Public/circleci-cli/paths"
+	"github.com/CircleCI-Public/circleci-cli/version"
+	"github.com/pkg/errors"
 )
 
 // CircleCI provides various `<< pipeline.x >>` values to be used in your config, but sometimes we need to fabricate those values when validating config.
@@ -62,4 +69,60 @@ func PrepareForGraphQL(kvMap Values) []KeyVal {
 		kvs = append(kvs, KeyVal{Key: k, Val: kvMap[k]})
 	}
 	return kvs
+}
+
+func Trigger(token string) error {
+
+	remote, err := git.InferProjectFromGitRemotes()
+
+	if err != nil {
+		return errors.Wrap(err, "this command must be run from inside a git repositopry")
+	}
+
+	url := fmt.Sprintf("https://circleci.com/api/v2/project/%s/%s/%s/pipeline",
+		strings.ToLower(string(remote.VcsType)),
+		remote.Organization,
+		remote.Project)
+
+	parameters := map[string]string{
+		"branch": "422-windows-installer",
+	}
+
+	body := new(bytes.Buffer)
+	if err := json.NewEncoder(body).Encode(parameters); err != nil {
+		return errors.Wrap(err, "Failed to encode JSON body for POST")
+	}
+
+	req, err := http.NewRequest("POST", url, body)
+
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Circle-Token", token)
+	req.Header.Set("User-Agent", version.UserAgent())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	var response struct {
+		Number int
+		State  string
+		Id     string
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return errors.Wrap(err, "json decode error")
+	}
+
+	fmt.Printf("Pipeline %d created\n", response.Number)
+
+	fmt.Println(paths.ProjectUrl(remote))
+
+	return nil
 }
