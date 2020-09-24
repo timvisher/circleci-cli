@@ -246,6 +246,15 @@ Please note that at this time all orbs created in the registry are world-readabl
 		Args: cobra.ExactArgs(1),
 	}
 
+	importOrbCommand := &cobra.Command{
+		Use:   "import <namespace>[/<orb>[@<version>]]",
+		Short: "(Server only) Import an orb version from circleci.com into a CircleCI Server installation",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return importOrb(opts)
+		},
+		Args:  cobra.ExactArgs(1),
+	}
+
 	orbPack := &cobra.Command{
 		Use:   "pack <path>",
 		Short: "Pack an Orb with local scripts.",
@@ -769,6 +778,11 @@ If you change your mind about the name, you will have to create a new orb with t
 	}
 
 	return nil
+}
+
+func importOrb(opts orbOptions) error {
+    cloudClient := client.NewClient("https://circleci.com", "graphql-unstable", "", opts.config.Debug)
+    orb, err := api.GetOrb
 }
 
 func showSource(opts orbOptions) error {
