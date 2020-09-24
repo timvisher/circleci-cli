@@ -320,6 +320,7 @@ Please note that at this time all orbs created in the registry are world-readabl
 
 	orbCommand.AddCommand(listCommand)
 	orbCommand.AddCommand(orbCreate)
+	orbCommand.AddCommand(importOrbCommand)
 	orbCommand.AddCommand(validateCommand)
 	orbCommand.AddCommand(processCommand)
 	orbCommand.AddCommand(publishCommand)

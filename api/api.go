@@ -1038,7 +1038,7 @@ func OrbInfo(cl *graphql.Client, orbRef string) (*OrbVersion, error) {
 	}
 
 	if response.OrbVersion.ID == "" {
-		return nil, ErrOrbVersionNotExists{orbVersionRef: orbRef}
+		return nil, &ErrOrbVersionNotExists{orbVersionRef: orbRef}
 	}
 
 	if len(response.OrbVersion.Orb.Versions) > 0 {
