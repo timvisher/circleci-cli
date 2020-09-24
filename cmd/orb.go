@@ -252,7 +252,7 @@ Please note that at this time all orbs created in the registry are world-readabl
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return importOrb(opts)
 		},
-		Args:  cobra.ExactArgs(1),
+		Args: cobra.ExactArgs(1),
 	}
 
 	orbPack := &cobra.Command{

@@ -983,11 +983,11 @@ func OrbSource(cl *graphql.Client, orbRef string) (string, error) {
 }
 
 type ErrOrbVersionNotExists struct {
-    orbVersionRef string
+	orbVersionRef string
 }
 
 func (o *ErrOrbVersionNotExists) Error() string {
-    return fmt.Sprintf("no Orb '%s' was found; please check that the Orb reference is correct", o.orbVersionRef)
+	return fmt.Sprintf("no Orb '%s' was found; please check that the Orb reference is correct", o.orbVersionRef)
 }
 
 // OrbInfo gets the meta-data of an orb
