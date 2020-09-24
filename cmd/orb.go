@@ -780,11 +780,6 @@ If you change your mind about the name, you will have to create a new orb with t
 	return nil
 }
 
-func importOrb(opts orbOptions) error {
-    cloudClient := client.NewClient("https://circleci.com", "graphql-unstable", "", opts.config.Debug)
-    orb, err := api.GetOrb
-}
-
 func showSource(opts orbOptions) error {
 	ref := opts.args[0]
 

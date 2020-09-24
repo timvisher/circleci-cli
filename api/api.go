@@ -982,6 +982,14 @@ func OrbSource(cl *graphql.Client, orbRef string) (string, error) {
 	return response.OrbVersion.Source, nil
 }
 
+type ErrOrbVersionNotExists struct {
+    orbVersionRef string
+}
+
+func (o *ErrOrbVersionNotExists) Error() string {
+    return fmt.Sprintf("no Orb '%s' was found; please check that the Orb reference is correct", o.orbVersionRef)
+}
+
 // OrbInfo gets the meta-data of an orb
 func OrbInfo(cl *graphql.Client, orbRef string) (*OrbVersion, error) {
 	if err := references.IsOrbRefWithOptionalVersion(orbRef); err != nil {
@@ -1030,7 +1038,7 @@ func OrbInfo(cl *graphql.Client, orbRef string) (*OrbVersion, error) {
 	}
 
 	if response.OrbVersion.ID == "" {
-		return nil, fmt.Errorf("no Orb '%s' was found; please check that the Orb reference is correct", orbRef)
+		return nil, ErrOrbVersionNotExists{orbVersionRef: orbRef}
 	}
 
 	if len(response.OrbVersion.Orb.Versions) > 0 {
