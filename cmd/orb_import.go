@@ -105,6 +105,9 @@ func importPlan(opts orbOptions, orbVersions []api.OrbVersion) (orbImportPlan, e
 }
 
 func applyPlan(opts orbOptions, plan orbImportPlan) error {
+	for _, ns := range plan.NewNamespaces {
+
+	}
 
 	return nil
 }
@@ -112,7 +115,9 @@ func applyPlan(opts orbOptions, plan orbImportPlan) error {
 func importOrb(opts orbOptions) error {
 	// 1. versionsToImport
 	// 2. generateImportPlan
-	// 3. applyImportPlan
+	// 3. display plan
+	// 4. wait for confirmation
+	// 5. applyImportPlan
 
 	return nil
 }
@@ -123,3 +128,17 @@ func isNamespace(ref string) bool {
 	}
 	return true
 }
+
+/*
+Questions to be answered:
+1. What are the permission models surrounding the creation of a namespace?
+   Until now, no one has needed to create a namespace that didn't originally belong to them.
+   How much enforcement is there in the back-end to prevent the CLI from doing this?
+
+2. Why does an org namespace need to be linked to an organization / vcs?
+   What are the benefits? Are those benefits important enough to enforce that link going forward?
+   Do we need to do more than adding an "imported" flag on namespace creation to support this new CLI command?
+
+3. Should we check for permissions before executing the import plan? This may be a better user experience than having your import fail half-way.
+   Option: check for admin-permissions. Send a warning if you actually can't perform these actions?
+*/
