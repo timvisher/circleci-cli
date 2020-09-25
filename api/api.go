@@ -696,7 +696,7 @@ func CreateNamespace(cl *graphql.Client, name string, organizationName string, o
 	return createNSResponse, nil
 }
 
-func getNamespace(cl *graphql.Client, name string) (*GetNamespaceResponse, error) {
+func GetNamespace(cl *graphql.Client, name string) (*GetNamespaceResponse, error) {
 	var response GetNamespaceResponse
 
 	query := `
@@ -722,6 +722,34 @@ func getNamespace(cl *graphql.Client, name string) (*GetNamespaceResponse, error
 	}
 
 	return &response, nil
+}
+
+// NamespaceExists returns a boolean indicating if the provided namespace exists.
+func NamespaceExists(cl *graphql.Client, namespace string) (bool, error) {
+	var response GetNamespaceResponse
+
+	query := `
+				query($name: String!) {
+					registryNamespace(
+						name: $name
+					){
+						id
+					}
+			 }`
+
+	request := graphql.NewRequest(query)
+	request.SetToken(cl.Token)
+	request.Var("name", namespace)
+
+	if err := cl.Run(request, &response); err != nil {
+		return false, errors.Wrapf(err, "failed to load namespace '%s'", err)
+	}
+
+	if response.RegistryNamespace.ID != "" {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func createOrbWithNsID(cl *graphql.Client, name string, namespaceID string) (*CreateOrbResponse, error) {
@@ -763,7 +791,7 @@ func createOrbWithNsID(cl *graphql.Client, name string, namespaceID string) (*Cr
 
 // CreateOrb creates (reserves) an orb within a namespace
 func CreateOrb(cl *graphql.Client, namespace string, name string) (*CreateOrbResponse, error) {
-	response, err := getNamespace(cl, namespace)
+	response, err := GetNamespace(cl, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -999,6 +1027,16 @@ func OrbSource(cl *graphql.Client, orbRef string) (string, error) {
 	return response.OrbVersion.Source, nil
 }
 
+// ErrOrbVersionNotExists ...
+type ErrOrbVersionNotExists struct {
+	OrbRef string
+}
+
+// Error ...
+func (e *ErrOrbVersionNotExists) Error() string {
+	return fmt.Sprintf("no Orb '%s' was found; please check that the Orb reference is correct", e.OrbRef)
+}
+
 // OrbInfo gets the meta-data of an orb
 func OrbInfo(cl *graphql.Client, orbRef string) (*OrbVersion, error) {
 	if err := references.IsOrbRefWithOptionalVersion(orbRef); err != nil {
@@ -1047,7 +1085,9 @@ func OrbInfo(cl *graphql.Client, orbRef string) (*OrbVersion, error) {
 	}
 
 	if response.OrbVersion.ID == "" {
-		return nil, fmt.Errorf("no Orb '%s' was found; please check that the Orb reference is correct", orbRef)
+		return nil, &ErrOrbVersionNotExists{
+			OrbRef: ref,
+		}
 	}
 
 	if len(response.OrbVersion.Orb.Versions) > 0 {
