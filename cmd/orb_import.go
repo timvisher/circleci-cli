@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/CircleCI-Public/circleci-cli/api"
 	"github.com/CircleCI-Public/circleci-cli/api/graphql"
 )
@@ -23,16 +26,34 @@ type OrbImportPlan struct {
 //  Import version `aengelberg/my-orb3@5.6.7`
 //  (`aengelberg/my-orb4@5.6.7` already exists)
 
-func versionsToImport(opts orbOptions) ([]*api.OrbVersion, error) {
-	ref := opts.args[0]
-	// TODO: if only a namespace is passed in, fetch all orbs within namespace
-	// TODO: support an `--all-versions` flag that gets all versions instead of latest version per orb?
+func versionsToImport(opts orbOptions) ([]api.OrbVersion, error) {
 	cloudClient := graphql.NewClient("https://circleci.com", "graphql-unstable", "", opts.cfg.Debug)
-	version, err := api.OrbInfo(cloudClient, ref)
-	if err != nil {
-		return nil, err
+
+	var orbVersions []api.OrbVersion
+	for _, ref := range opts.args {
+		// If its not a namespace, fetch using api.OrbInfo -> append to list
+		if !isNamespace(ref) {
+			version, err := api.OrbInfo(cloudClient, ref)
+			if err != nil {
+				return nil, fmt.Errorf("orb info: %s", err.Error())
+			}
+
+			orbVersions = append(orbVersions, *version)
+			continue
+		}
+
+		// TODO: support an `--all-versions` flag that gets all versions instead of latest version per orb?
+		// Note: fetching all orb versions may not be possible. The best we could do is fetch an arbitrarily large number.
+		// Otherwise, do some other operation that grabs orb source data from a single namespace.
+		obv, err := api.ListNamespaceOrbVersions(cloudClient, ref)
+		if err != nil {
+			return nil, fmt.Errorf("list namespace orb versions: %s", err.Error())
+		}
+
+		orbVersions = append(orbVersions, obv...)
 	}
-	return []*api.OrbVersion{version}, nil
+
+	return orbVersions, nil
 }
 
 func importPlan(opts orbOptions, refs []string) (OrbImportPlan, error) {
@@ -47,4 +68,11 @@ func applyPlan(opts orbOptions, plan OrbImportPlan) error {
 
 func importOrb(opts orbOptions) error {
 	return nil
+}
+
+func isNamespace(ref) bool {
+	if len(strings.Split(ref, "/")) > 1 {
+		return false
+	}
+	return true
 }
