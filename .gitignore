@@ -27,3 +27,11 @@ packrd/
 bin/golangci-lint
 integration_tests/tmp
 *.exe
+
+# For supporting locally based Issue and PR workflows
+/issue*.md
+/pr*.md
+/pull_request*.md
+/pull-request*.md
+/pull requests/*
+/issues/*
